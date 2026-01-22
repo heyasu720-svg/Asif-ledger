@@ -2,8 +2,8 @@ import { GoogleGenAI } from "@google/genai";
 import { AppState, TransactionType } from "../types";
 
 export const getBusinessInsights = async (state: AppState) => {
-  // Initialize AI client with required API key
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  // এপিআই ক্লায়েন্ট ইনিশিয়ালাইজেশন - এনভায়রনমেন্ট ভ্যারিয়েবল থেকে কি নেবে
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
   const totalOutstanding = state.customers.reduce((acc, c) => {
     const bal = state.transactions
@@ -27,18 +27,16 @@ export const getBusinessInsights = async (state: AppState) => {
   const totalExpenses = state.expenses.reduce((acc, e) => acc + e.amount, 0);
 
   const prompt = `
-    Act as a professional retail business consultant for a shop named "${state.shopName}" in Bangladesh. 
-    Analyze this business ledger data and provide 3-4 concise, actionable insights or tips for the owner in BENGALI language.
+    দোকানের নাম: "${state.shopName}"
+    ডাটা বিশ্লেষণ করে ৩-৪টি গুরুত্বপূর্ণ ব্যবসায়িক পরামর্শ বাংলায় দিন:
     
-    Data Summary:
-    - Number of Customers: ${state.customers.length}
-    - Total Cash Sales: ৳${cashSalesTotal}
-    - Total Credit Sales: ৳${creditSalesTotal}
-    - Total Outstanding Dues: ৳${totalOutstanding}
-    - Total Operational Expenses: ৳${totalExpenses}
+    - মোট কাস্টমার: ${state.customers.length} জন
+    - মোট নগদ বিক্রয়: ৳${cashSalesTotal}
+    - মোট বাকি বিক্রয়: ৳${creditSalesTotal}
+    - বর্তমান মোট পাওনা: ৳${totalOutstanding}
+    - মোট খরচ: ৳${totalExpenses}
     
-    Focus on Sales balance, Credit collection and Expense control.
-    Format the response in BENGALI as clear, bulleted points. Keep it under 150 words.
+    পরামর্শগুলো ছোট ছোট পয়েন্টে এবং উৎসাহমূলক হবে যাতে ব্যবসার উন্নতি হয়।
   `;
 
   try {
@@ -46,15 +44,13 @@ export const getBusinessInsights = async (state: AppState) => {
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        temperature: 0.7,
-        systemInstruction: "You are a helpful business assistant for small retailers in Bangladesh. You speak only in Bengali.",
+        systemInstruction: "আপনি একজন দক্ষ ক্ষুদ্র ব্যবসায়িক উপদেষ্টা। আপনার সব উত্তর বাংলায় এবং সহজবোধ্য হতে হবে।",
       },
     });
 
-    // Access .text property directly as per latest SDK
     return response.text;
   } catch (error) {
-    console.error("Gemini Error:", error);
-    throw error;
+    console.error("Gemini AI Error:", error);
+    return "দুঃখিত, এই মুহূর্তে AI পরামর্শ দিতে পারছে না। ইন্টারনেটে সমস্যা থাকতে পারে।";
   }
 };
